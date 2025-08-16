@@ -55,8 +55,26 @@ def get_total_food_quantity():
 
 def get_provider_types_by_quantity():
     return run_query("""
-    SELECT provider_type, SUM(quantity) AS total_quantity
-    FROM food_listings
-    JOIN providers USING(provider_id)
-    GROUP BY provider_type
+        SELECT food_listings.provider_type, SUM(food_listings.quantity) AS total_quantity
+        FROM food_listings
+        JOIN providers ON food_listings.provider_id = providers.provider_id
+        GROUP BY food_listings.provider_type
     """)
+def list_listings(filters: dict = None):
+    query = "SELECT * FROM food_listings WHERE 1=1"
+    params = []
+    filters = filters or {}
+    for col in ("provider_id", "provider_type", "location", "food_type", "meal_type"):
+        val = filters.get(col)
+        if val:
+            query += f" AND {col} = ?"
+            params.append(val)
+    return run_query(query, tuple(params))
+def list_claims(status=None):
+    query = "SELECT * FROM claims"
+    params = ()
+    if status:
+        query += " WHERE status = ?"
+        params = (status,)
+    return run_query(query, params)
+
